@@ -1,0 +1,39 @@
+# ============================================================
+# TARGET COMPANIES — Multi-source job board configuration
+# ============================================================
+# Format: [source:]slug
+#
+# Supported sources:
+#   greenhouse:<token>  — https://boards.greenhouse.io/<token>
+#   lever:<slug>        — https://jobs.lever.co/<slug>
+#   ashby:<slug>        — https://jobs.ashbyhq.com/<slug>
+#   workable:<subdomain>— https://<subdomain>.workable.com/jobs
+#   remoteok            — Full remote jobs feed (no slug needed)
+#
+# Lines without a prefix are treated as Greenhouse tokens (backward compat).
+# Blank lines and lines starting with # are ignored.
+#
+# ── HOW TO FIND SLUGS ─────────────────────────────────────────────────────────
+# Greenhouse : Go to jobs.greenhouse.io/<TOKEN> — use that TOKEN
+# Lever      : Go to jobs.lever.co/<SLUG>       — use that SLUG
+# Ashby      : Go to jobs.ashbyhq.com/<SLUG>    — use that SLUG
+# Workable   : Go to <SUBDOMAIN>.workable.com   — use that SUBDOMAIN
+#
+# ── EXAMPLES ─────────────────────────────────────────────────────────────────
+# greenhouse:stripe
+# greenhouse:notion
+# lever:shopify
+# lever:netflix
+# ashby:vercel
+# ashby:linear
+# workable:acme
+# remoteok
+#
+# ── YOUR COMPANIES ────────────────────────────────────────────────────────────
+# Add your target companies below:
+
+greenhouse:stripe
+greenhouse:notion
+lever:shopify
+ashby:vercel
+remoteok

@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+  mail:
+    host: localhost
+    port: 25
+
+ai:
+  provider: groq
+  groq:
+    api-key: test-key
+    base-url: http://localhost:9999/v1/chat/completions
+    model: test-model
+  ollama:
+    base-url: http://localhost:11434
+    model: test-model
+
+notification:
+  enabled: false
+  to-email: ""
+  from-email: ""
+
+jobbot:
+  match-threshold: 70
+  companies-file: classpath:target-companies.txt
+  resume-file: classpath:my-resume.txt
+  resume-upload-dir: /tmp/jobbot-test
+  remoteok:
+    tags: ""

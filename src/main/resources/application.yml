@@ -1,0 +1,88 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/jobbot?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: jobbot
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  jackson:
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 20MB
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8080
+
+# ── AI Provider Configuration ──────────────────────────────────────────────
+# provider: groq (FREE - recommended) | ollama (FREE - local)
+# Groq API key from https://console.groq.com/ — free, no credit card needed
+ai:
+  provider: ${AI_PROVIDER:groq}
+
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    base-url: https://api.groq.com/openai/v1/chat/completions
+    # Free models on Groq (as of 2025):
+    # llama-3.3-70b-versatile  — best quality, free
+    # llama-3.1-8b-instant     — fastest, free
+    # mixtral-8x7b-32768       — good quality, free
+    model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+
+  ollama:
+    base-url: ${OLLAMA_URL:http://localhost:11434}
+    # Model to use with Ollama (must be pulled first: ollama pull llama3.2)
+    model: ${OLLAMA_MODEL:llama3.2}
+
+jobbot:
+  match-threshold: 70
+  companies-file: classpath:target-companies.txt
+  resume-file: classpath:my-resume.txt
+  resume-upload-dir: ${user.home}/.jobbot/resume
+  remoteok:
+    tags: ""
+
+# ── Email Notifications (optional) ─────────────────────────────────────────
+# Set NOTIFY_EMAIL in .env to receive alerts when high-match jobs are found.
+# Uses Gmail SMTP by default (free). Leave NOTIFY_EMAIL blank to disable.
+#
+# Gmail setup (one-time):
+#  1. Enable 2FA on your Google account
+#  2. Go to myaccount.google.com/apppasswords
+#  3. Create an App Password for "Mail"
+#  4. Use that 16-char password as MAIL_PASSWORD below
+notification:
+  enabled: ${NOTIFY_ENABLED:false}
+  to-email: ${NOTIFY_EMAIL:}
+  from-email: ${MAIL_USERNAME:}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.vinay.jobbot: INFO
+    org.springframework.web: WARN
+    org.apache.pdfbox: WARN

@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: jobbot-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: jobbot
+      MYSQL_USER: jobbot
+      MYSQL_PASSWORD: ${DB_PASSWORD:-changeme}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - jobbot_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "jobbot", "--password=${DB_PASSWORD:-changeme}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  jobbot_mysql_data:
+    driver: local

@@ -1,0 +1,40 @@
+# ============================================================
+# MY RESUME — paste your full plain-text resume below this line
+# ============================================================
+# Format tips:
+#   - Plain text only (no formatting, no tables)
+#   - Include: Name, Contact, Summary, Skills, Work Experience,
+#              Education, Projects, Certifications
+#   - The more detail here, the more accurate the AI scoring will be
+#
+# Example structure:
+#
+# John Doe
+# john.doe@email.com | linkedin.com/in/johndoe | github.com/johndoe
+#
+# SUMMARY
+# Software engineer with 5 years of experience in ...
+#
+# SKILLS
+# Languages: Java, Python, TypeScript
+# Frameworks: Spring Boot, React, FastAPI
+# Cloud: AWS (EC2, S3, Lambda), GCP
+# Databases: MySQL, PostgreSQL, Redis
+#
+# EXPERIENCE
+# Senior Software Engineer — Acme Corp (2021–Present)
+#   - Led redesign of payment processing pipeline ...
+#   - Reduced p99 latency by 40% ...
+#
+# Junior Developer — Startup Inc (2019–2021)
+#   - Built REST APIs using Spring Boot ...
+#
+# EDUCATION
+# B.S. Computer Science — State University (2019)
+#
+# PROJECTS
+# Personal Finance Tracker — github.com/johndoe/finance-tracker
+#   - Full-stack app using React + Spring Boot + MySQL
+# ============================================================
+
+PASTE YOUR RESUME HERE

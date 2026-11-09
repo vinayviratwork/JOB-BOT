@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobBot Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0f172a;
+      --surface: #1e293b;
+      --border:  #334155;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --accent:  #38bdf8;
+      --blue:    #0ea5e9;
+      --green:   #22c55e;
+      --yellow:  #f59e0b;
+      --red:     #ef4444;
+      --purple:  #a78bfa;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: .85rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem;
+    }
+    .hdr-left h1 { font-size: 1.25rem; color: var(--accent); }
+    .hdr-left p  { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+    .hdr-right   { display: flex; gap: .45rem; align-items: center; flex-wrap: wrap; }
+
+    /* AI badge */
+    .ai-badge { display:inline-flex; align-items:center; gap:.3rem;
+      padding:.18rem .65rem; border-radius:999px;
+      font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+    .ai-ok  { background:#14532d; color:#86efac; }
+    .ai-err { background:#450a0a; color:#fca5a5; }
+
+    /* Setup alert */
+    .setup-alert { display:none; background:#1c1400; border-left:3px solid var(--yellow);
+      padding:.65rem 1.5rem; font-size:.82rem; color:#fde68a; }
+    .setup-alert a { color:#fbbf24; font-weight:600; }
+    .setup-alert code { background:#2d2000; padding:.1rem .3rem; border-radius:3px; }
+
+    /* ── Buttons ── */
+    button { cursor:pointer; border:none; border-radius:6px; padding:.42rem .95rem;
+             font-size:.82rem; font-weight:500; transition:opacity .15s; }
+    button:hover   { opacity:.82; }
+    button:disabled{ opacity:.38; cursor:not-allowed; }
+    .btn-primary   { background:var(--blue);   color:#fff; }
+    .btn-success   { background:var(--green);  color:#fff; }
+    .btn-warning   { background:var(--yellow); color:#000; }
+    .btn-danger    { background:var(--red);    color:#fff; }
+    .btn-secondary { background:#475569;       color:#fff; }
+    .btn-purple    { background:#7c3aed;       color:#fff; }
+    .btn-teal      { background:#0d9488;       color:#fff; }
+    .btn-sm        { padding:.25rem .55rem; font-size:.75rem; }
+
+    /* ── Banner ── */
+    #banner { display:none; padding:.55rem 1.5rem; font-size:.83rem; font-weight:500; }
+    .banner-info    { background:#0c4a6e; color:#7dd3fc; display:block !important; }
+    .banner-success { background:#14532d; color:#86efac; display:block !important; }
+    .banner-error   { background:#450a0a; color:#fca5a5; display:block !important; }
+
+    /* ── Two-column layout ── */
+    .page { display:grid; grid-template-columns:270px 1fr; min-height:calc(100vh - 52px); }
+    @media(max-width:860px){ .page { grid-template-columns:1fr; } }
+
+    /* ── Sidebar ── */
+    aside { background:var(--surface); border-right:1px solid var(--border);
+            padding:1rem .9rem; display:flex; flex-direction:column; gap:1.1rem; overflow-y:auto; }
+    .sb-section h3 { font-size:.68rem; text-transform:uppercase; letter-spacing:.06em;
+                     color:var(--muted); margin-bottom:.55rem; }
+
+    /* Resume card */
+    .resume-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:.75rem; }
+    .status-row  { display:flex; align-items:center; gap:.45rem; margin-bottom:.45rem; }
+    .rdot        { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .rdot-ok     { background:var(--green); }
+    .rdot-bad    { background:var(--red); animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .r-filename  { font-size:.78rem; color:var(--muted); word-break:break-all; }
+    .r-chars     { font-size:.72rem; color:var(--muted); margin-bottom:.65rem; }
+    .drop-zone   { border:2px dashed var(--border); border-radius:5px; padding:.65rem;
+                   text-align:center; cursor:pointer; transition:border-color .2s,background .2s;
+                   font-size:.78rem; color:var(--muted); }
+    .drop-zone:hover,.drop-zone.drag-over { border-color:var(--blue); background:rgba(14,165,233,.06); color:var(--accent); }
+    .drop-zone input[type=file]{ display:none; }
+    .dz-icon { font-size:1.4rem; margin-bottom:.25rem; }
+    .up-bar { display:none; height:3px; background:var(--border); border-radius:2px; margin-top:.4rem; overflow:hidden; }
+    .up-bar.active { display:block; }
+    .up-fill { height:100%; background:var(--blue); animation:slide 1.2s ease-in-out infinite; }
+    @keyframes slide { 0%{width:0;margin-left:0} 50%{width:70%;margin-left:15%} 100%{width:0;margin-left:100%} }
+
+    /* Sources */
+    .src-list { list-style:none; display:flex; flex-direction:column; gap:.3rem; }
+    .src-list li { display:flex; align-items:center; justify-content:space-between;
+                   background:var(--bg); border:1px solid var(--border); border-radius:5px;
+                   padding:.35rem .6rem; font-size:.77rem; }
+    .src-badge { font-size:.65rem; padding:.08rem .38rem; border-radius:999px; font-weight:700; text-transform:uppercase; }
+    .src-greenhouse{ background:#14532d; color:#86efac; }
+    .src-lever     { background:#1e3a5f; color:#7dd3fc; }
+    .src-ashby     { background:#3b1f5e; color:#c4b5fd; }
+    .src-workable  { background:#78350f; color:#fde68a; }
+    .src-remoteok  { background:#450a0a; color:#fca5a5; }
+    .src-unknown   { background:#334155; color:#94a3b8; }
+
+    /* Email config */
+    .email-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:.75rem; font-size:.8rem; }
+    .email-status { display:flex; align-items:center; gap:.4rem; margin-bottom:.45rem; font-size:.78rem; }
+    .email-enabled  { color:var(--green); }
+    .email-disabled { color:var(--muted); }
+
+    /* Filters */
+    .filter-group { display:flex; flex-direction:column; gap:.45rem; }
+    .filter-group label { font-size:.78rem; color:var(--muted); }
+    .filter-group input[type=range]{ accent-color:var(--blue); width:100%; }
+    .filter-group select,
+    .filter-group input[type=text]{
+      width:100%; background:var(--bg); color:var(--text);
+      border:1px solid var(--border); border-radius:5px;
+      padding:.3rem .45rem; font-size:.8rem; }
+    #score-label { font-weight:700; color:var(--accent); }
+
+    /* ── Main ── */
+    main { padding:1.1rem 1.4rem; overflow-x:auto; }
+
+    /* Stats */
+    .stats { display:flex; gap:.65rem; flex-wrap:wrap; margin-bottom:.9rem; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:8px;
+                 padding:.55rem .9rem; text-align:center; min-width:82px; }
+    .stat-card .num { font-size:1.45rem; font-weight:700; color:var(--accent); }
+    .stat-card .lbl { font-size:.68rem; color:var(--muted); margin-top:1px; }
+
+    /* Toolbar above table */
+    .table-toolbar { display:flex; align-items:center; justify-content:space-between;
+                     flex-wrap:wrap; gap:.5rem; margin-bottom:.65rem; }
+    .table-toolbar-right { display:flex; gap:.4rem; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; font-size:.83rem; }
+    thead th { text-align:left; padding:.5rem .65rem;
+               background:var(--surface); border-bottom:2px solid var(--border);
+               color:var(--muted); text-transform:uppercase; font-size:.68rem;
+               letter-spacing:.05em; white-space:nowrap; }
+    tbody tr { border-bottom:1px solid var(--surface); cursor:pointer; transition:background .1s; }
+    tbody tr:hover { background:var(--surface); }
+    tbody td { padding:.5rem .65rem; vertical-align:middle; }
+
+    /* Score / status badges */
+    .score-badge { display:inline-block; padding:.16rem .48rem; border-radius:999px; font-weight:700; font-size:.76rem; }
+    .score-high   { background:#14532d; color:#86efac; }
+    .score-medium { background:#78350f; color:#fde68a; }
+    .score-low    { background:#450a0a; color:#fca5a5; }
+    .score-none   { background:var(--surface); color:var(--muted); }
+
+    .status-pill { display:inline-block; padding:.11rem .48rem; border-radius:999px;
+                   font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+    .s-DISCOVERED{ background:#1e3a5f; color:#7dd3fc; }
+    .s-DRAFTED   { background:#3b1f5e; color:#c4b5fd; }
+    .s-APPROVED  { background:#14532d; color:#86efac; }
+    .s-APPLIED   { background:#0c4a6e; color:#38bdf8; }
+    .s-RESPONDED { background:#78350f; color:#fde68a; }
+    .s-REJECTED  { background:#450a0a; color:#fca5a5; }
+
+    /* Detail row */
+    .detail-row td { background:#0b1526; padding:1rem 1.25rem !important; cursor:default; }
+    .detail-tabs { display:flex; gap:.35rem; margin-bottom:.85rem; border-bottom:1px solid var(--border); }
+    .dtab { background:none; border:none; border-bottom:2px solid transparent;
+            padding:.35rem .7rem; font-size:.8rem; color:var(--muted); cursor:pointer;
+            border-radius:0; transition:color .15s,border-color .15s; }
+    .dtab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .dtab-content { display:none; }
+    .dtab-content.active { display:block; }
+
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media(max-width:768px){ .detail-grid { grid-template-columns:1fr; } }
+    .detail-section h3 { font-size:.68rem; text-transform:uppercase; letter-spacing:.05em;
+                         color:var(--muted); margin-bottom:.42rem; }
+    .desc-box { background:var(--surface); border-radius:5px; padding:.6rem;
+                max-height:200px; overflow-y:auto;
+                font-size:.78rem; color:#cbd5e1; line-height:1.6; white-space:pre-wrap; }
+    textarea.cl-editor { width:100%; min-height:190px;
+                         background:var(--surface); border:1px solid var(--border); border-radius:5px;
+                         color:var(--text); font-size:.78rem; line-height:1.6;
+                         padding:.6rem; resize:vertical; font-family:inherit; }
+    textarea.cl-editor:focus { outline:2px solid var(--blue); border-color:transparent; }
+    textarea.notes-editor { width:100%; min-height:120px;
+                            background:var(--surface); border:1px solid var(--border); border-radius:5px;
+                            color:var(--text); font-size:.78rem; line-height:1.6;
+                            padding:.6rem; resize:vertical; font-family:inherit; }
+    textarea.notes-editor:focus { outline:2px solid var(--yellow); border-color:transparent; }
+    .detail-actions { display:flex; gap:.38rem; flex-wrap:wrap; margin-top:.55rem; }
+    .reasoning-box { background:var(--surface); border-radius:5px; padding:.6rem;
+                     font-size:.78rem; color:#94a3b8; line-height:1.6; font-style:italic; }
+    .meta-list { font-size:.78rem; color:#94a3b8; line-height:2.1; }
+    .meta-list strong { color:#cbd5e1; }
+
+    /* Empty state */
+    .empty-state { text-align:center; padding:2.5rem; color:var(--muted); }
+    .empty-state .icon { font-size:2.2rem; margin-bottom:.4rem; }
+
+    /* Loading overlay */
+    #loading-overlay { display:none; position:fixed; inset:0;
+      background:rgba(15,23,42,.75); z-index:9999;
+      align-items:center; justify-content:center; flex-direction:column; gap:.75rem; }
+    #loading-overlay.active { display:flex; }
+    .spinner { width:36px; height:36px; border:4px solid var(--border);
+               border-top-color:var(--accent); border-radius:50%;
+               animation:spin .75s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    #loading-overlay p { color:#94a3b8; font-size:.85rem; }
+    a { color:var(--accent); }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-text">Working…</p>
+</div>
+
+<header>
+  <div class="hdr-left">
+    <h1>🤖 JobBot Dashboard</h1>
+    <p>AI-powered job assistant &middot; personal use only &middot; never auto-submits</p>
+  </div>
+  <div class="hdr-right">
+    <span class="ai-badge ai-ok" id="ai-badge">⚡ FREE AI</span>
+    <button class="btn-primary"   id="btn-scan">🔍 Scan Now</button>
+    <button class="btn-secondary" id="btn-refresh">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="setup-alert" id="setup-alert">
+  ⚠ AI not configured. Get a <strong>FREE</strong> Groq key:
+  1. Go to <a href="https://console.groq.com/" target="_blank">console.groq.com</a> → Sign up → API Keys → Create Key
+  2. Open <code>.env</code> and set <code>GROQ_API_KEY=gsk_yourkey</code>
+  3. Restart the app
+</div>
+
+<div id="banner"></div>
+
+<div class="page">
+
+  <!-- ── Sidebar ── -->
+  <aside>
+
+    <!-- Resume -->
+    <div class="sb-section">
+      <h3>📄 Resume</h3>
+      <div class="resume-card">
+        <div class="status-row">
+          <div class="rdot" id="rdot"></div>
+          <span id="r-status" style="font-size:.8rem">Loading…</span>
+        </div>
+        <div class="r-filename" id="r-filename"></div>
+        <div class="r-chars"    id="r-chars"></div>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept=".pdf,.txt" />
+          <div class="dz-icon">📎</div>
+          <div>Drop PDF or .txt here</div>
+          <div style="font-size:.7rem;margin-top:.2rem">or click to browse</div>
+        </div>
+        <div class="up-bar" id="up-bar"><div class="up-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- Email notifications -->
+    <div class="sb-section">
+      <h3>✉️ Email Alerts</h3>
+      <div class="email-card">
+        <div class="email-status">
+          <span id="email-dot">⚫</span>
+          <span id="email-text" class="email-disabled">Not configured</span>
+        </div>
+        <div style="font-size:.73rem;color:var(--muted)">
+          Set <code style="background:var(--surface);padding:.1rem .3rem;border-radius:3px">NOTIFY_ENABLED=true</code>
+          and <code style="background:var(--surface);padding:.1rem .3rem;border-radius:3px">NOTIFY_EMAIL=you@email.com</code>
+          in <code style="background:var(--surface);padding:.1rem .3rem;border-radius:3px">.env</code>
+          to get email alerts when new high-match jobs are found.
+        </div>
+      </div>
+    </div>
+
+    <!-- Sources -->
+    <div class="sb-section">
+      <h3>🌐 Job Sources</h3>
+      <ul class="src-list" id="src-list">
+        <li style="color:var(--muted);font-size:.78rem">Loading…</li>
+      </ul>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:.4rem">
+        Edit <code>target-companies.txt</code> to add sources
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="sb-section">
+      <h3>🔧 Filters</h3>
+      <div class="filter-group">
+        <label>Min score: <span id="score-label">0</span></label>
+        <input type="range" id="score-filter" min="0" max="100" value="0" step="5" />
+        <label>Status:</label>
+        <select id="status-filter">
+          <option value="">All statuses</option>
+          <option value="DISCOVERED">DISCOVERED</option>
+          <option value="DRAFTED">DRAFTED</option>
+          <option value="APPROVED">APPROVED</option>
+          <option value="APPLIED">APPLIED</option>
+          <option value="RESPONDED">RESPONDED</option>
+          <option value="REJECTED">REJECTED</option>
+        </select>
+        <label>Source:</label>
+        <select id="source-filter">
+          <option value="">All sources</option>
+          <option value="greenhouse">Greenhouse</option>
+          <option value="lever">Lever</option>
+          <option value="ashby">Ashby</option>
+          <option value="workable">Workable</option>
+          <option value="remoteok">RemoteOK</option>
+        </select>
+        <label>Search:</label>
+        <input type="text" id="search-filter" placeholder="title, company…" />
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Main ── -->
+  <main>
+    <div class="stats">
+      <div class="stat-card"><div class="num" id="s-total">—</div><div class="lbl">Total Jobs</div></div>
+      <div class="stat-card"><div class="num" id="s-match">—</div><div class="lbl">Matches ≥70</div></div>
+      <div class="stat-card"><div class="num" id="s-draft">—</div><div class="lbl">Drafted</div></div>
+      <div class="stat-card"><div class="num" id="s-appl">—</div><div class="lbl">Applied</div></div>
+      <div class="stat-card"><div class="num" id="s-src">—</div><div class="lbl">Sources</div></div>
+    </div>
+
+    <div class="table-toolbar">
+      <div style="font-size:.8rem;color:var(--muted)" id="result-count"></div>
+      <div class="table-toolbar-right">
+        <button class="btn-teal btn-sm" id="btn-csv" title="Export all applications to CSV">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Company</th>
+          <th>Location</th>
+          <th>Source</th>
+          <th>Score</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="jobs-tbody">
+        <tr><td colspan="7"><div class="empty-state"><div class="icon">⏳</div>Loading…</div></td></tr>
+      </tbody>
+    </table>
+  </main>
+
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let allJobs = [], allApps = [], expandedJobId = null, expandedTab = 'cover';
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function stripHtml(h) { const d = document.createElement('div'); d.innerHTML = h||''; return d.textContent||''; }
+function scoreBadge(v) {
+  if (v==null) return '<span class="score-badge score-none">N/A</span>';
+  const c = v>=70?'score-high':v>=40?'score-medium':'score-low';
+  return `<span class="score-badge ${c}">${Math.round(v)}</span>`;
+}
+function statusPill(s) { return `<span class="status-pill s-${s}">${s}</span>`; }
+function srcBadge(s) {
+  const k = (s||'unknown').toLowerCase();
+  return `<span class="src-badge src-${k}">${k}</span>`;
+}
+function appFor(jobId) { return allApps.find(a => a.job?.id === jobId); }
+
+function showBanner(msg, type='info') {
+  const b = $('banner');
+  b.textContent = msg; b.className = `banner-${type}`;
+  if (type !== 'error') setTimeout(() => { b.className=''; b.textContent=''; }, 6000);
+}
+function setLoading(on, txt='Working…') {
+  $('loading-text').textContent = txt;
+  $('loading-overlay').classList.toggle('active', on);
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers:{'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  if (!res.ok) { const t = await res.text(); throw new Error(`${res.status} ${t}`); }
+  const ct = res.headers.get('content-type')||'';
+  return ct.includes('application/json') ? res.json() : res.text();
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  const [jobs, apps] = await Promise.all([api('GET','/api/jobs'), api('GET','/api/applications')]);
+  allJobs = jobs; allApps = apps;
+  updateStats(); renderTable(); loadSources();
+}
+
+async function loadResumeStatus() {
+  try {
+    const d = await api('GET', '/api/resume');
+    const dot = $('rdot');
+    if (d.loaded) {
+      dot.className='rdot rdot-ok';
+      $('r-status').textContent = 'Resume loaded ✓';
+      $('r-filename').textContent = d.fileName||'';
+      $('r-chars').textContent = `${(d.charCount||0).toLocaleString()} characters`;
+    } else {
+      dot.className='rdot rdot-bad';
+      $('r-status').textContent = 'No resume — upload one';
+      $('r-filename').textContent = '';
+      $('r-chars').textContent = 'Scoring needs a resume';
+    }
+  } catch(e) { $('r-status').textContent = 'Could not load status'; }
+}
+
+async function loadAiInfo() {
+  try {
+    const info = await api('GET','/api/info/ai');
+    const badge = $('ai-badge');
+    const alert = $('setup-alert');
+    if (info.configured) {
+      badge.textContent = `FREE AI: ${info.provider.toUpperCase()} / ${info.model}`;
+      badge.className = 'ai-badge ai-ok';
+      alert.style.display = 'none';
+    } else {
+      badge.textContent = 'AI NOT CONFIGURED';
+      badge.className = 'ai-badge ai-err';
+      alert.style.display = 'block';
+    }
+  } catch(e) { /* ignore */ }
+}
+
+async function loadEmailStatus() {
+  try {
+    const info = await api('GET','/api/info/ai'); // reuse, no separate endpoint needed
+    // Check via notification config in info — we'll derive from app config
+    const dot  = $('email-dot');
+    const txt  = $('email-text');
+    // We detect by checking if banner hint exists
+    dot.textContent  = '🟡';
+    txt.textContent  = 'Check .env to enable';
+    txt.className    = 'email-disabled';
+  } catch(e) { /* ignore */ }
+}
+
+function loadSources() {
+  const counts = {};
+  allJobs.forEach(j => { const s=j.source||'unknown'; counts[s]=(counts[s]||0)+1; });
+  const ul = $('src-list');
+  if (!Object.keys(counts).length) {
+    ul.innerHTML = '<li style="color:var(--muted);font-size:.78rem">No jobs yet — click Scan Now</li>';
+    $('s-src').textContent = '0';
+    return;
+  }
+  ul.innerHTML = Object.entries(counts)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([s,n]) => `<li>${srcBadge(s)}<span style="color:var(--muted);font-size:.76rem">${n} jobs</span></li>`)
+    .join('');
+  $('s-src').textContent = Object.keys(counts).length;
+}
+
+function updateStats() {
+  $('s-total').textContent = allJobs.length;
+  $('s-match').textContent = allJobs.filter(j=>j.matchScore>=70).length;
+  $('s-draft').textContent = allApps.filter(a=>a.status==='DRAFTED').length;
+  $('s-appl').textContent  = allApps.filter(a=>a.status==='APPLIED').length;
+  const srcs = new Set(allJobs.map(j=>j.source).filter(Boolean));
+  $('s-src').textContent = srcs.size||'—';
+}
+
+// ── Render table ──────────────────────────────────────────────────────────────
+function renderTable() {
+  const minScore = parseInt($('score-filter').value,10);
+  const statusF  = $('status-filter').value;
+  const sourceF  = $('source-filter').value;
+  const searchQ  = $('search-filter').value.toLowerCase().trim();
+
+  let filtered = allJobs.filter(j => {
+    if (minScore>0 && (j.matchScore??-1)<minScore) return false;
+    if (sourceF && (j.source||'')!==sourceF) return false;
+    if (statusF) {
+      const app = appFor(j.id);
+      if ((app?app.status:'DISCOVERED')!==statusF) return false;
+    }
+    if (searchQ) {
+      if (!`${j.title} ${j.company} ${j.location}`.toLowerCase().includes(searchQ)) return false;
+    }
+    return true;
+  });
+  filtered.sort((a,b)=>(b.matchScore??-1)-(a.matchScore??-1));
+
+  $('result-count').textContent = `${filtered.length} job${filtered.length!==1?'s':''} shown`;
+
+  const tbody = $('jobs-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+      <div class="icon">🔍</div>No jobs match these filters. Click <strong>Scan Now</strong> to fetch listings.
+    </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML='';
+  filtered.forEach(job => {
+    const app    = appFor(job.id);
+    const status = app ? app.status : 'DISCOVERED';
+    const tr     = document.createElement('tr');
+    tr.dataset.jobId = job.id;
+    tr.innerHTML = `
+      <td><strong>${esc(job.title)}</strong></td>
+      <td>${esc(job.company)}</td>
+      <td style="font-size:.77rem;color:var(--muted)">${esc(job.location||'—')}</td>
+      <td>${srcBadge(job.source)}</td>
+      <td>${scoreBadge(job.matchScore)}</td>
+      <td>${statusPill(status)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-primary btn-sm"   onclick="draftLetter(event,${job.id})">✍ Draft</button>
+        <button class="btn-purple btn-sm"    onclick="rescoreJob(event,${job.id})"  title="Re-score against current resume">↺ Score</button>
+        <a href="${esc(job.sourceUrl)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
+          <button class="btn-secondary btn-sm">↗ Open</button>
+        </a>
+        ${app ? `<button class="btn-success btn-sm" onclick="markApplied(event,${app.id})">✓ Applied</button>` : ''}
+      </td>`;
+    tr.addEventListener('click', e => {
+      if (e.target.tagName==='BUTTON'||e.target.tagName==='A') return;
+      toggleDetail(job.id, tr);
+    });
+    tbody.appendChild(tr);
+    if (expandedJobId===job.id) insertDetailRow(job, tr, expandedTab);
+  });
+}
+
+// ── Detail row ────────────────────────────────────────────────────────────────
+function toggleDetail(jobId, tr) {
+  document.querySelector('.detail-row')?.remove();
+  if (expandedJobId===jobId) { expandedJobId=null; return; }
+  expandedJobId = jobId;
+  insertDetailRow(allJobs.find(j=>j.id===jobId), tr, expandedTab);
+}
+
+function insertDetailRow(job, afterTr, activeTab) {
+  const app    = appFor(job.id);
+  const letter = app?.generatedCoverLetter || '';
+  const notes  = app?.notes || '';
+
+  const detailTr = document.createElement('tr');
+  detailTr.className = 'detail-row';
+  detailTr.innerHTML = `<td colspan="7">
+    <!-- Tabs -->
+    <div class="detail-tabs">
+      <button class="dtab ${activeTab==='info'?'active':''}"   onclick="switchTab('info',${job.id})">📋 Job Info</button>
+      <button class="dtab ${activeTab==='cover'?'active':''}"  onclick="switchTab('cover',${job.id})">✍ Cover Letter</button>
+      <button class="dtab ${activeTab==='notes'?'active':''}"  onclick="switchTab('notes',${job.id})">📝 Notes</button>
+    </div>
+
+    <!-- Tab: Job Info -->
+    <div class="dtab-content ${activeTab==='info'?'active':''}" id="tab-info-${job.id}">
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Details</h3>
+          <div class="meta-list">
+            <div><strong>Title:</strong> ${esc(job.title)}</div>
+            <div><strong>Company:</strong> ${esc(job.company)}</div>
+            <div><strong>Location:</strong> ${esc(job.location||'—')}</div>
+            <div><strong>Source:</strong> ${srcBadge(job.source)}</div>
+            <div><strong>Link:</strong> <a href="${esc(job.sourceUrl)}" target="_blank" rel="noopener noreferrer">Open listing ↗</a></div>
+            ${job.matchScore!=null?`<div><strong>Score:</strong> ${scoreBadge(job.matchScore)}</div>`:''}
+            ${app?`<div><strong>Status:</strong> ${statusPill(app.status)}</div>`:''}
+          </div>
+          ${job.matchReasoning?`<h3 style="margin-top:.8rem">AI Reasoning</h3>
+            <div class="reasoning-box">${esc(job.matchReasoning)}</div>`:''}
+        </div>
+        <div class="detail-section">
+          <h3>Job Description</h3>
+          <div class="desc-box">${esc(stripHtml(job.description))}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Cover Letter -->
+    <div class="dtab-content ${activeTab==='cover'?'active':''}" id="tab-cover-${job.id}">
+      <div style="margin-bottom:.5rem;font-size:.77rem;color:var(--muted)">
+        ${app?`Application #${app.id} &middot; Status: ${statusPill(app.status)}`:'No application yet — click Draft to create one'}
+      </div>
+      <textarea class="cl-editor" id="cl-${job.id}">${esc(letter)}</textarea>
+      <div class="detail-actions">
+        <button class="btn-primary btn-sm"    onclick="draftLetter(event,${job.id})">✍ (Re)generate</button>
+        ${app?`
+        <button class="btn-secondary btn-sm"  onclick="saveLetter(${job.id},${app.id})">💾 Save Edits</button>
+        <button class="btn-secondary btn-sm"  onclick="copyLetter(${job.id})">📋 Copy</button>
+        <button class="btn-success btn-sm"    onclick="setStatus(${app.id},'APPROVED')">👍 Approve</button>
+        <button class="btn-warning btn-sm"    onclick="markApplied(event,${app.id})">✓ Mark Applied</button>
+        <button class="btn-danger btn-sm"     onclick="setStatus(${app.id},'REJECTED')">✗ Reject</button>
+        `:''}
+      </div>
+    </div>
+
+    <!-- Tab: Notes -->
+    <div class="dtab-content ${activeTab==='notes'?'active':''}" id="tab-notes-${job.id}">
+      <div style="margin-bottom:.45rem;font-size:.77rem;color:var(--muted)">
+        Private notes — only visible here, never sent anywhere.
+      </div>
+      ${app ? `
+        <textarea class="notes-editor" id="notes-${app.id}" placeholder="e.g. Had a phone screen on Tuesday. Follow up by Friday…">${esc(notes)}</textarea>
+        <div class="detail-actions">
+          <button class="btn-warning btn-sm" onclick="saveNotes(${app.id})">💾 Save Notes</button>
+        </div>
+      ` : `
+        <div style="color:var(--muted);font-size:.8rem;padding:.5rem 0">
+          Generate a cover letter first to unlock notes for this job.
+        </div>
+      `}
+    </div>
+  </td>`;
+  afterTr.insertAdjacentElement('afterend', detailTr);
+}
+
+function switchTab(tab, jobId) {
+  expandedTab = tab;
+  document.querySelectorAll('.dtab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.dtab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.dtab-content[id="tab-${tab}-${jobId}"]`)?.classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+async function draftLetter(event, jobId) {
+  event.stopPropagation();
+  setLoading(true, 'Generating cover letter with FREE AI…');
+  try {
+    await api('POST', `/api/jobs/${jobId}/generate-application`);
+    showBanner('Cover letter drafted!', 'success');
+    expandedJobId = jobId; expandedTab = 'cover';
+    await loadData();
+  } catch(e) { showBanner('Error: '+e.message, 'error'); }
+  finally    { setLoading(false); }
+}
+
+async function rescoreJob(event, jobId) {
+  event.stopPropagation();
+  setLoading(true, 'Re-scoring job against resume…');
+  try {
+    await api('POST', `/api/jobs/${jobId}/rescore`);
+    showBanner('Job re-scored!', 'success');
+    expandedJobId = jobId; expandedTab = 'info';
+    await loadData();
+  } catch(e) { showBanner('Rescore failed: '+e.message, 'error'); }
+  finally    { setLoading(false); }
+}
+
+async function markApplied(event, appId) {
+  event.stopPropagation();
+  if (!confirm('Mark as APPLIED?\n\nThis records that you manually submitted externally.\nJobBot never auto-submits to any platform.')) return;
+  try {
+    await api('PATCH', `/api/applications/${appId}/status`, { status:'APPLIED' });
+    showBanner('Marked as applied!', 'success');
+    await loadData();
+  } catch(e) { showBanner('Error: '+e.message, 'error'); }
+}
+
+async function setStatus(appId, status) {
+  try {
+    await api('PATCH', `/api/applications/${appId}/status`, { status });
+    showBanner(`Status updated to ${status}`, 'success');
+    await loadData();
+  } catch(e) { showBanner('Error: '+e.message, 'error'); }
+}
+
+async function saveLetter(jobId, appId) {
+  const text = $(`cl-${jobId}`)?.value;
+  if (text==null) return;
+  try {
+    await api('PATCH', `/api/applications/${appId}/cover-letter`, { coverLetter:text });
+    showBanner('Cover letter saved!', 'success');
+  } catch(e) { showBanner('Save failed: '+e.message, 'error'); }
+}
+
+function copyLetter(jobId) {
+  const text = $(`cl-${jobId}`)?.value||'';
+  navigator.clipboard.writeText(text).then(() => showBanner('Copied to clipboard!', 'success'));
+}
+
+async function saveNotes(appId) {
+  const text = $(`notes-${appId}`)?.value??'';
+  try {
+    await api('PATCH', `/api/applications/${appId}/notes`, { notes:text });
+    showBanner('Notes saved!', 'success');
+  } catch(e) { showBanner('Save failed: '+e.message, 'error'); }
+}
+
+function exportCsv() {
+  const a = document.createElement('a');
+  a.href = '/api/applications/export.csv';
+  a.download = '';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showBanner('CSV export started!', 'success');
+}
+
+// ── Resume upload ─────────────────────────────────────────────────────────────
+async function uploadResume(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.pdf') && !file.name.toLowerCase().endsWith('.txt')) {
+    showBanner('Only PDF or .txt files are accepted', 'error'); return;
+  }
+  $('up-bar').classList.add('active');
+  showBanner('Uploading resume…', 'info');
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res  = await fetch('/api/resume/upload', { method:'POST', body:fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||res.statusText);
+    const warn = data.charCount < 500
+      ? ` ⚠ Only ${data.charCount} chars — PDF may be scanned. Try re-exporting from Word.` : '';
+    showBanner(`Resume uploaded: ${data.charCount?.toLocaleString()} chars.${warn} Run Scan Now to re-score.`,
+               data.charCount<500?'info':'success');
+    await loadResumeStatus();
+  } catch(e) { showBanner('Upload failed: '+e.message, 'error'); }
+  finally    { $('up-bar').classList.remove('active'); }
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────────
+$('btn-scan').addEventListener('click', async () => {
+  setLoading(true, 'Scanning all job boards and scoring with FREE AI…');
+  try {
+    const res = await api('POST', '/api/jobs/scan-now');
+    showBanner(res.result||'Scan complete', 'success');
+    await loadData(); await loadResumeStatus();
+  } catch(e) { showBanner('Scan failed: '+e.message, 'error'); }
+  finally    { setLoading(false); }
+});
+
+$('btn-refresh').addEventListener('click', async () => {
+  try { await Promise.all([loadData(), loadResumeStatus()]); showBanner('Refreshed', 'success'); }
+  catch(e) { showBanner('Refresh failed: '+e.message, 'error'); }
+});
+
+$('btn-csv').addEventListener('click', exportCsv);
+
+$('score-filter').addEventListener('input', e => { $('score-label').textContent=e.target.value; renderTable(); });
+$('status-filter').addEventListener('change', renderTable);
+$('source-filter').addEventListener('change', renderTable);
+$('search-filter').addEventListener('input',  renderTable);
+
+// Drag-and-drop resume upload
+const dz   = $('drop-zone');
+const finp = $('file-input');
+dz.addEventListener('click', () => finp.click());
+finp.addEventListener('change', () => { if (finp.files[0]) uploadResume(finp.files[0]); finp.value=''; });
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) uploadResume(e.dataTransfer.files[0]);
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+Promise.all([loadData(), loadResumeStatus(), loadAiInfo(), loadEmailStatus()])
+  .catch(e => showBanner('Failed to load: '+e.message, 'error'));
+</script>
+</body>
+</html>
