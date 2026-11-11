@@ -85,11 +85,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- H2 in-memory DB for tests (no MySQL needed in CI) -->
+        <!-- H2 in-memory DB (used for tests AND an optional no-Docker demo profile) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

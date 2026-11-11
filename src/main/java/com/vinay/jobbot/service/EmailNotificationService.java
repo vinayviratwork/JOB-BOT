@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Sends email notifications when new high-match jobs are found.
@@ -27,7 +28,7 @@ import java.util.List;
 @Slf4j
 public class EmailNotificationService {
 
-    private final JavaMailSender mailSender;
+    private final JavaMailSender mailSender;  // null when mail is not configured
 
     @Value("${notification.enabled:false}")
     private boolean enabled;
@@ -38,8 +39,8 @@ public class EmailNotificationService {
     @Value("${notification.from-email:}")
     private String fromEmail;
 
-    public EmailNotificationService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    public EmailNotificationService(Optional<JavaMailSender> mailSender) {
+        this.mailSender = mailSender.orElse(null);
     }
 
     /**
@@ -49,7 +50,7 @@ public class EmailNotificationService {
      * @param highMatchJobs list of jobs with score >= match-threshold that are newly drafted
      */
     public void sendHighMatchDigest(List<JobListing> highMatchJobs) {
-        if (!enabled || toEmail.isBlank() || highMatchJobs.isEmpty()) {
+        if (!enabled || toEmail.isBlank() || highMatchJobs.isEmpty() || mailSender == null) {
             if (enabled && !toEmail.isBlank()) {
                 log.debug("Email digest skipped — no new high-match jobs this run");
             }
@@ -107,7 +108,7 @@ public class EmailNotificationService {
      * Sends a single alert when a specific job gets a cover letter drafted.
      */
     public void sendSingleJobAlert(JobListing job) {
-        if (!enabled || toEmail.isBlank()) return;
+        if (!enabled || toEmail.isBlank() || mailSender == null) return;
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -131,6 +132,6 @@ public class EmailNotificationService {
     }
 
     public boolean isEnabled() {
-        return enabled && !toEmail.isBlank();
+        return enabled && !toEmail.isBlank() && mailSender != null;
     }
 }
