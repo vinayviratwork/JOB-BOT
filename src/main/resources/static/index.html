@@ -457,10 +457,15 @@ async function loadEmailStatus() {
     // Check via notification config in info — we'll derive from app config
     const dot  = $('email-dot');
     const txt  = $('email-text');
-    // We detect by checking if banner hint exists
-    dot.textContent  = '🟡';
-    txt.textContent  = 'Check .env to enable';
-    txt.className    = 'email-disabled';
+    if (info.notifyEnabled) {
+      dot.textContent = '🟢';
+      txt.textContent = 'Email alerts enabled';
+      txt.className   = 'email-enabled';
+    } else {
+      dot.textContent = '🔴';
+      txt.textContent = 'Disabled (set NOTIFY_ENABLED=true in .env)';
+      txt.className   = 'email-disabled';
+    }
   } catch(e) { /* ignore */ }
 }
 
@@ -568,9 +573,9 @@ function insertDetailRow(job, afterTr, activeTab) {
   detailTr.innerHTML = `<td colspan="7">
     <!-- Tabs -->
     <div class="detail-tabs">
-      <button class="dtab ${activeTab==='info'?'active':''}"   onclick="switchTab('info',${job.id})">📋 Job Info</button>
-      <button class="dtab ${activeTab==='cover'?'active':''}"  onclick="switchTab('cover',${job.id})">✍ Cover Letter</button>
-      <button class="dtab ${activeTab==='notes'?'active':''}"  onclick="switchTab('notes',${job.id})">📝 Notes</button>
+      <button class="dtab ${activeTab==='info'?'active':''}"   onclick="switchTab(event,'info',${job.id})">📋 Job Info</button>
+      <button class="dtab ${activeTab==='cover'?'active':''}"  onclick="switchTab(event,'cover',${job.id})">✍ Cover Letter</button>
+      <button class="dtab ${activeTab==='notes'?'active':''}"  onclick="switchTab(event,'notes',${job.id})">📝 Notes</button>
     </div>
 
     <!-- Tab: Job Info -->
@@ -635,7 +640,7 @@ function insertDetailRow(job, afterTr, activeTab) {
   afterTr.insertAdjacentElement('afterend', detailTr);
 }
 
-function switchTab(tab, jobId) {
+function switchTab(event, tab, jobId) {
   expandedTab = tab;
   document.querySelectorAll('.dtab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.dtab-content').forEach(c => c.classList.remove('active'));

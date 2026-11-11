@@ -8,7 +8,7 @@ import org.springframework.web.client.RestClient;
 public class RestClientConfig {
 
     /**
-     * General-purpose RestClient bean used by JobFetchService and ClaudeClientService.
+     * General-purpose RestClient bean used by JobFetchService and AiClientService.
      * Timeout and connection settings are kept at defaults for simplicity;
      * rate limiting is handled in the callers via Thread.sleep.
      */

@@ -38,12 +38,12 @@ else    { Check-Ok   "Port 3306" "free" }
 $ef = Join-Path $PSScriptRoot ".env"
 if (Test-Path $ef) {
     $ec = Get-Content $ef -Raw
-    if ($ec -match "ANTHROPIC_API_KEY=(.+)") {
+    if ($ec -match "GROQ_API_KEY=(.+)") {
         $k = $Matches[1].Trim()
-        if ($k.Length -lt 20 -or $k -like "sk-ant-xxx*") { Check-Fail "API_KEY" "placeholder" "Get real key from https://console.anthropic.com/" }
-        elseif ($k -match "^sk-ant-") { Check-Ok "API_KEY" "set correctly" }
-        else { Check-Warn "API_KEY" "does not start with sk-ant-" }
-    } else { Check-Fail "API_KEY" "missing" "Add ANTHROPIC_API_KEY=sk-ant-... to .env" }
+        if ($k.Length -lt 20 -or $k -like "gsk_xxx*") { Check-Fail "API_KEY" "placeholder" "Get real key from https://console.groq.com/keys" }
+        elseif ($k -match "^gsk_") { Check-Ok "API_KEY" "set correctly" }
+        else { Check-Warn "API_KEY" "does not start with gsk_" }
+    } else { Check-Fail "API_KEY" "missing" "Add GROQ_API_KEY=gsk_... to .env" }
     if ($ec -match "DB_PASSWORD=(.+)") {
         if ($Matches[1].Trim() -eq "changeme") { Check-Warn "DB_PASSWORD" "changeme - works but consider changing" }
         else { Check-Ok "DB_PASSWORD" "set" }

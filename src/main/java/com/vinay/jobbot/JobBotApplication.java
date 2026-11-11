@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * Personal-use tool that:
  *  - Fetches jobs from public Greenhouse board APIs (no scraping)
- *  - Scores each job against your resume using Claude
+ *  - Scores each job against your resume using AI (Groq/Ollama)
  *  - Drafts cover letters for high-match jobs
  *  - Never auto-submits — all submission is a manual human step
  *

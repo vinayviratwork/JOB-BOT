@@ -18,7 +18,7 @@ public class LeverJobDto {
     private String text;           // job title
     private String hostedUrl;      // public apply URL
     private String descriptionPlain;
-    private List<String> categories;
+    @JsonProperty("categories")
     private LeverCategories categoriesObj;
     private List<LeverList> lists;
     private String additional;

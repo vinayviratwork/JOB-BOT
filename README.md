@@ -127,12 +127,16 @@ OLLAMA_MODEL=llama3.2
 | GET | `/api/jobs` | All discovered jobs |
 | GET | `/api/jobs/matches?minScore=70` | High-match jobs |
 | POST | `/api/jobs/{id}/generate-application` | Generate cover letter |
+| POST | `/api/jobs/{id}/rescore` | Re-score a job against current resume |
 | GET | `/api/applications` | All applications |
+| GET | `/api/applications/{id}` | Single application by ID |
 | PATCH | `/api/applications/{id}/status` | Update application status |
-| GET | `/api/applications/export/csv` | Export all applications as CSV |
+| PATCH | `/api/applications/{id}/cover-letter` | Edit cover letter |
+| PATCH | `/api/applications/{id}/notes` | Edit application notes |
+| GET | `/api/applications/export.csv` | Export all applications as CSV |
 | POST | `/api/resume/upload` | Upload PDF or txt resume |
 | GET | `/api/resume` | Resume status |
-| GET | `/api/info/ai` | Current AI provider info |
+| GET | `/api/info/ai` | Current AI provider info + email alert status |
 | GET | `/swagger-ui.html` | Full interactive API docs |
 
 ---
